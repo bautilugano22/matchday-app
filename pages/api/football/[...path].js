@@ -8,6 +8,19 @@ const BASE_URL = "https://api.football-data.org/v4";
 // el proxy como un pasamanos abierto a cualquier endpoint.
 const ALLOWED_PREFIXES = ["competitions", "teams"];
 
+// Caché en memoria: mientras el servidor de Vercel siga "tibio" (instancia
+// reutilizada entre pedidos cercanos), reusamos la misma respuesta en vez
+// de volver a golpear football-data.org. Esto reduce mucho el consumo de
+// cuota cuando varias personas usan la app al mismo tiempo.
+const cache = new Map();
+
+// Tiempo que se reutiliza cada respuesta antes de pedirla de nuevo (en segundos).
+// Los partidos en vivo cambian rápido; la tabla y los goleadores casi no.
+function ttlFor(segments) {
+  if (segments.includes("matches")) return 45;
+  return 300; // standings, scorers, teams
+}
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Método no permitido" });
@@ -33,6 +46,14 @@ export default async function handler(req, res) {
   const qs = search.toString();
 
   const targetUrl = `${BASE_URL}/${segments.join("/")}${qs ? `?${qs}` : ""}`;
+  const ttlSeconds = ttlFor(segments);
+
+  const cached = cache.get(targetUrl);
+  if (cached && Date.now() - cached.timestamp < ttlSeconds * 1000) {
+    res.setHeader("Cache-Control", `s-maxage=${ttlSeconds}, stale-while-revalidate=120`);
+    res.setHeader("X-Cache", "HIT");
+    return res.status(200).json(cached.data);
+  }
 
   try {
     const upstream = await fetch(targetUrl, {
@@ -42,16 +63,28 @@ export default async function handler(req, res) {
     const data = await upstream.json();
 
     if (!upstream.ok) {
+      // Si nos quedamos sin cuota pero todavía tenemos algo en caché (aunque
+      // esté vencido), mejor mostrar eso que un error en pantalla.
+      if (upstream.status === 429 && cached) {
+        res.setHeader("X-Cache", "STALE");
+        return res.status(200).json(cached.data);
+      }
       return res.status(upstream.status).json({
         error: data?.message || "Error consultando football-data.org",
       });
     }
 
-    // Cache liviano en el borde de Vercel para no gastar la cuota de la API
-    // (10 pedidos/minuto en el plan gratis) cuando entran muchos visitantes.
-    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
+    cache.set(targetUrl, { data, timestamp: Date.now() });
+
+    // Cache también en el borde de Vercel para pedidos de otros visitantes.
+    res.setHeader("Cache-Control", `s-maxage=${ttlSeconds}, stale-while-revalidate=120`);
+    res.setHeader("X-Cache", "MISS");
     return res.status(200).json(data);
   } catch (err) {
+    if (cached) {
+      res.setHeader("X-Cache", "STALE");
+      return res.status(200).json(cached.data);
+    }
     return res.status(502).json({ error: "No se pudo contactar a football-data.org" });
   }
 }

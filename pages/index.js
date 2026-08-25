@@ -16,20 +16,19 @@ const ZONES = {
   PL: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
-    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
     { from: 18, to: 20, color: 'var(--whistle)', label: 'Descenso' },
   ],
   PD: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
-    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
     { from: 18, to: 20, color: 'var(--whistle)', label: 'Descenso' },
   ],
   BL1: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
-    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
-    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Promoción/Descenso' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
     { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
   ],
   SA: [
@@ -40,9 +39,10 @@ const ZONES = {
   ],
   FL1: [
     { from: 1, to: 3, color: 'var(--floodlight)', label: 'Champions League' },
-    { from: 4, to: 4, color: 'var(--zone-europa)', label: 'Europa League' },
-    { from: 5, to: 5, color: 'var(--zone-conf)', label: 'Conference League' },
-    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Promoción/Descenso' },
+    { from: 4, to: 4, color: 'var(--zone-ucl-quali)', label: 'Ronda de clasificación - Champions League' },
+    { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
     { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
   ],
 };

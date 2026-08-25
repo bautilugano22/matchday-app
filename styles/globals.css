@@ -15,6 +15,7 @@
   --zone-europa:#6bb3d6;
   --zone-conf:#8fcf9a;
   --zone-playout:#e08a4a;
+   --zone-ucl-quali:#b98be0;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}

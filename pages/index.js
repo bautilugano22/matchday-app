@@ -9,6 +9,58 @@ const COMPETITIONS = [
   { code: 'CL', name: 'Champions League' },
 ];
 
+// Zonas de clasificación aproximadas por liga (posición → color/etiqueta).
+// Los cupos exactos pueden variar según la temporada (ranking de coeficientes,
+// repechajes, etc.) — se muestra la distribución más habitual de cada liga.
+const ZONES = {
+  PL: [
+    { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
+    { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 18, to: 20, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+  PD: [
+    { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
+    { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 18, to: 20, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+  BL1: [
+    { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
+    { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Promoción/Descenso' },
+    { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+  SA: [
+    { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
+    { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 18, to: 20, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+  FL1: [
+    { from: 1, to: 3, color: 'var(--floodlight)', label: 'Champions League' },
+    { from: 4, to: 4, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 5, to: 5, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Promoción/Descenso' },
+    { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+};
+
+function getZone(code, position) {
+  return (ZONES[code] || []).find(z => position >= z.from && position <= z.to);
+}
+
+function zoneLegend(code) {
+  const zones = ZONES[code] || [];
+  const seen = new Set();
+  return zones.filter(z => {
+    if (seen.has(z.label)) return false;
+    seen.add(z.label);
+    return true;
+  });
+}
+
 function initials(name) {
   return (name || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -134,26 +186,41 @@ export default function Home() {
       {loading && <div className="banner info" style={{ marginTop: 16 }}>Cargando datos de {COMPETITIONS.find(c => c.code === competition)?.name}…</div>}
 
       {!loading && tab === 'tabla' && standings && (
-        <table className="standings">
-          <thead>
-            <tr><th>Club</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DIF</th><th className="pts">PTS</th></tr>
-          </thead>
-          <tbody>
-            {standings.map(row => (
-              <tr key={row.team.id}>
-                <td className="pos">{row.position}</td>
-                <td className="club" onClick={() => openTeam(row.team)}>
-                  <Crest team={row.team} />
-                  {row.team.shortName || row.team.name}
-                </td>
-                <td>{row.playedGames}</td><td>{row.won}</td><td>{row.draw}</td><td>{row.lost}</td>
-                <td>{row.goalsFor}</td><td>{row.goalsAgainst}</td>
-                <td>{row.goalDifference > 0 ? '+' : ''}{row.goalDifference}</td>
-                <td className="pts">{row.points}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table className="standings">
+            <thead>
+              <tr><th>Club</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DIF</th><th className="pts">PTS</th></tr>
+            </thead>
+            <tbody>
+              {standings.map(row => {
+                const zone = getZone(competition, row.position);
+                return (
+                  <tr key={row.team.id}>
+                    <td className="pos" style={{ borderLeft: `4px solid ${zone ? zone.color : 'transparent'}` }}>{row.position}</td>
+                    <td className="club" onClick={() => openTeam(row.team)}>
+                      <Crest team={row.team} />
+                      {row.team.shortName || row.team.name}
+                    </td>
+                    <td>{row.playedGames}</td><td>{row.won}</td><td>{row.draw}</td><td>{row.lost}</td>
+                    <td>{row.goalsFor}</td><td>{row.goalsAgainst}</td>
+                    <td>{row.goalDifference > 0 ? '+' : ''}{row.goalDifference}</td>
+                    <td className="pts">{row.points}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {zoneLegend(competition).length > 0 && (
+            <div className="zone-legend">
+              {zoneLegend(competition).map(z => (
+                <div className="zone-legend-item" key={z.label}>
+                  <span className="zone-dot" style={{ background: z.color }}></span>{z.label}
+                </div>
+              ))}
+              <div className="zone-legend-note">Cupos aproximados — pueden variar según la temporada.</div>
+            </div>
+          )}
+        </>
       )}
 
       {!loading && tab === 'partidos' && (

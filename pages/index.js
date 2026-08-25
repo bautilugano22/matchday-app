@@ -13,6 +13,22 @@ function initials(name) {
   return (name || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
+function Crest({ team, size = 22 }) {
+  const [broken, setBroken] = useState(false);
+  if (team?.crest && !broken) {
+    return (
+      <img
+        src={team.crest}
+        alt={team.shortName || team.name}
+        className="crest-img"
+        style={{ width: size, height: size }}
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+  return <span className="badge" style={{ width: size, height: size }}>{initials(team?.shortName || team?.name)}</span>;
+}
+
 function formatDateLabel(dateStr) {
   const d = new Date(dateStr);
   const today = new Date();
@@ -127,7 +143,7 @@ export default function Home() {
               <tr key={row.team.id}>
                 <td className="pos">{row.position}</td>
                 <td className="club" onClick={() => openTeam(row.team)}>
-                  <span className="badge">{initials(row.team.shortName || row.team.name)}</span>
+                  <Crest team={row.team} />
                   {row.team.shortName || row.team.name}
                 </td>
                 <td>{row.playedGames}</td><td>{row.won}</td><td>{row.draw}</td><td>{row.lost}</td>
@@ -155,7 +171,7 @@ export default function Home() {
                 return (
                   <div className="fixture" key={m.id}>
                     <div className="side">
-                      <span className="badge">{initials(m.homeTeam.shortName || m.homeTeam.name)}</span>
+                      <Crest team={m.homeTeam} size={18} />
                       {m.homeTeam.shortName || m.homeTeam.name}
                     </div>
                     <div className="mid">
@@ -165,7 +181,7 @@ export default function Home() {
                     </div>
                     <div className="side right">
                       {m.awayTeam.shortName || m.awayTeam.name}
-                      <span className="badge">{initials(m.awayTeam.shortName || m.awayTeam.name)}</span>
+                      <Crest team={m.awayTeam} size={18} />
                     </div>
                     <div className={`status ${live ? 'live' : ''}`}>{statusLabel}</div>
                   </div>
@@ -185,7 +201,7 @@ export default function Home() {
           {[...scorers].sort((a, b) => (b[statMode] || 0) - (a[statMode] || 0)).map((s, i) => (
             <div className="player-row" key={s.player.id} onClick={() => setSelectedPlayer(s)}>
               <div className="player-rank">{i + 1}</div>
-              <span className="badge" style={{ width: 30, height: 30 }}>{initials(s.team.shortName || s.team.name)}</span>
+              <Crest team={s.team} size={30} />
               <div className="player-info">
                 <div className="player-name">{s.player.name}</div>
                 <div className="player-meta">{s.team.shortName || s.team.name} · {s.player.position || '—'}</div>

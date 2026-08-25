@@ -11,7 +11,10 @@
   --floodlight:#e8b94a;
   --whistle:#c1432a;
   --whistle-soft: rgba(193,67,42,0.16);
-  --win:#5fae7a;
+  --win:#5fae7a;  
+  --zone-europa:#6bb3d6;
+  --zone-conf:#8fcf9a;
+  --zone-playout:#e08a4a;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}

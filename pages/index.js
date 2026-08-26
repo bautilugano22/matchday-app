@@ -17,7 +17,6 @@ const COMPETITIONS = [
 // Los cupos exactos pueden variar según la temporada (ranking de coeficientes,
 // repechajes, etc.) — se muestra la distribución más habitual de cada liga.
 const ZONES = {
-const ZONES = {
   PL: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },

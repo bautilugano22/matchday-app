@@ -91,6 +91,11 @@ function formatDateLabel(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+const POSITION_ORDER = { Goalkeeper: 0, Defence: 1, 'Centre-Back': 1, 'Left-Back': 1, 'Right-Back': 1, Midfield: 2, 'Defensive Midfield': 2, 'Central Midfield': 2, 'Attacking Midfield': 2, Offence: 3, 'Left Winger': 3, 'Right Winger': 3, 'Centre-Forward': 3, Attack: 3 };
+function positionRank(pos) {
+  return POSITION_ORDER[pos] ?? 4;
+}
+
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();
@@ -110,6 +115,7 @@ export default function Home() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamMatches, setTeamMatches] = useState(null);
+  const [teamSquad, setTeamSquad] = useState(null);
 
   const loadCompetition = useCallback(async (code) => {
     setLoading(true);
@@ -139,11 +145,17 @@ export default function Home() {
   async function openTeam(team) {
     setSelectedTeam(team);
     setTeamMatches(null);
+    setTeamSquad(null);
     try {
-      const data = await getJSON(`teams/${team.id}/matches?status=FINISHED&limit=5`);
-      setTeamMatches(data.matches || []);
+      const [matchesData, teamData] = await Promise.all([
+        getJSON(`teams/${team.id}/matches?status=FINISHED&limit=5`),
+        getJSON(`teams/${team.id}`),
+      ]);
+      setTeamMatches(matchesData.matches || []);
+      setTeamSquad(teamData.squad || []);
     } catch {
       setTeamMatches([]);
+      setTeamSquad([]);
     }
   }
 
@@ -314,6 +326,24 @@ export default function Home() {
                 <div className="side right">{m.awayTeam.shortName || m.awayTeam.name}</div>
               </div>
             ))}
+
+            <div className="sub" style={{ marginTop: 20 }}>Plantel</div>
+            {teamSquad === null && <p style={{ color: 'var(--chalk-dim)' }}>Cargando…</p>}
+            {teamSquad && teamSquad.length === 0 && <p style={{ color: 'var(--chalk-dim)' }}>No hay datos de plantel disponibles.</p>}
+            {teamSquad && teamSquad.length > 0 && (
+              <div className="squad-list">
+                {[...teamSquad].sort((a, b) => positionRank(a.position) - positionRank(b.position)).map(p => (
+                  <div className="squad-player" key={p.id}>
+                    <span className="squad-number">{p.shirtNumber ?? '—'}</span>
+                    <div className="squad-info">
+                      <div className="squad-name">{p.name}</div>
+                      <div className="squad-pos">{p.position || 'Posición no informada'}</div>
+                    </div>
+                    <span className="squad-nat">{p.nationality || ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

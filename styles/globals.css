@@ -47,7 +47,7 @@ h1.brand span.sub{display:block;font-family:'Inter';font-style:normal;font-weigh
 .banner.error{background: var(--whistle-soft);border-color: rgba(193,67,42,0.4);color:#e88a75;}
 
 .league-select{display:flex;gap:8px;flex-wrap:wrap;margin: 20px 0 16px;}
-.lchip{background:var(--pitch-card);border:1px solid var(--pitch-line);color:var(--chalk-dim);font-family:'Inter';font-weight:600;font-size:12px;padding:7px 13px;border-radius:20px;cursor:pointer;}
+.lchip{background:var(--pitch-card);border:1px solid var(--pitch-line);color:var(--chalk-dim);font-family:'Inter';font-weight:600;font-size:12px;padding:7px 13px;border-radius:20px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
 .lchip.active{background:var(--chalk);color:var(--pitch-dark);border-color:var(--chalk);}
 
 .tabs{display:flex;gap:4px;background:var(--pitch-card);border:1px solid var(--pitch-line);border-radius:12px;padding:5px;margin-top:10px;}

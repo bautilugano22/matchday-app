@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from 'react';
-import Head from 'next/head';
 
 const COMPETITIONS = [
   { code: 'PL', name: 'Premier League' },
@@ -8,10 +7,6 @@ const COMPETITIONS = [
   { code: 'SA', name: 'Serie A' },
   { code: 'FL1', name: 'Ligue 1' },
   { code: 'CL', name: 'Champions League' },
-  { code: 'DED', name: 'Eredivisie' },
-  { code: 'PPL', name: 'Primeira Liga' },
-  { code: 'BSA', name: 'Brasileirão' },
-  { code: 'ELC', name: 'Championship' },
 ];
 
 // Zonas de clasificación aproximadas por liga (posición → color/etiqueta).
@@ -21,19 +16,20 @@ const ZONES = {
   PL: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
     { from: 18, to: 20, color: 'var(--whistle)', label: 'Descenso' },
   ],
   PD: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
-    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
     { from: 18, to: 20, color: 'var(--whistle)', label: 'Descenso' },
   ],
   BL1: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
-    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
-    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
+    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Promoción/Descenso' },
     { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
   ],
   SA: [
@@ -44,37 +40,10 @@ const ZONES = {
   ],
   FL1: [
     { from: 1, to: 3, color: 'var(--floodlight)', label: 'Champions League' },
-    { from: 4, to: 4, color: 'var(--zone-ucl-quali)', label: 'Ronda de clasificación - Champions League' },
-    { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
-    { from: 6, to: 6, color: 'var(--zone-conf)', label: 'Conference League' },
-    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
+    { from: 4, to: 4, color: 'var(--zone-europa)', label: 'Europa League' },
+    { from: 5, to: 5, color: 'var(--zone-conf)', label: 'Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Promoción/Descenso' },
     { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
-  ],
-  DED: [
-    { from: 1, to: 2, color: 'var(--floodlight)', label: 'Champions League' },
-    { from: 3, to: 3, color: 'var(--zone-ucl-quali)', label: 'Ronda de clasificación - Champions League' },
-    { from: 4, to: 4, color: 'var(--zone-europa)', label: 'Ronda de clasificación - Europa League' },
-    { from: 5, to: 8, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
-    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
-    { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
-  ],
-  PPL: [
-    { from: 1, to: 1, color: 'var(--floodlight)', label: 'Champions League' },
-    { from: 2, to: 2, color: 'var(--zone-ucl-quali)', label: 'Ronda de clasificación - Champions League' },
-    { from: 3, to: 3, color: 'var(--zone-europa)', label: 'Ronda de clasificación - Europa League' },
-    { from: 4, to: 4, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
-    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
-    { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
-  ],
-  BSA: [
-    { from: 1, to: 6, color: 'var(--floodlight)', label: 'Copa Libertadores' },
-    { from: 7, to: 12, color: 'var(--zone-europa)', label: 'Copa Sudamericana' },
-    { from: 17, to: 20, color: 'var(--whistle)', label: 'Descenso' },
-  ],
-  ELC: [
-    { from: 1, to: 2, color: 'var(--floodlight)', label: 'Ascenso directo a la Premier League' },
-    { from: 3, to: 6, color: 'var(--zone-conf)', label: 'Play Off de ascenso' },
-    { from: 22, to: 24, color: 'var(--whistle)', label: 'Descenso' },
   ],
 };
 
@@ -91,6 +60,7 @@ function zoneLegend(code) {
     return true;
   });
 }
+
 function initials(name) {
   return (name || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -121,64 +91,6 @@ function formatDateLabel(dateStr) {
   return new Date(dateStr).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
-const POSITION_ORDER = { Goalkeeper: 0, Defence: 1, 'Centre-Back': 1, 'Left-Back': 1, 'Right-Back': 1, Midfield: 2, 'Defensive Midfield': 2, 'Central Midfield': 2, 'Attacking Midfield': 2, Offence: 3, 'Left Winger': 3, 'Right Winger': 3, 'Centre-Forward': 3, Attack: 3 };
-function positionRank(pos) {
-  return POSITION_ORDER[pos] ?? 4;
-}
-
-const POSITION_GROUPS = [
-  { key: 0, label: 'Arqueros' },
-  { key: 1, label: 'Defensores' },
-  { key: 2, label: 'Mediocampistas' },
-  { key: 3, label: 'Delanteros' },
-  { key: 4, label: 'Otros' },
-];
-const COMPETITION_FLAGS = {
-  PL: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-  PD: '🇪🇸',
-  BL1: '🇩🇪',
-  SA: '🇮🇹',
-  FL1: '🇫🇷',
-  CL: '🏆',
-  DED: '🇳🇱',
-  PPL: '🇵🇹',
-  BSA: '🇧🇷',
-  ELC: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-};
-
-// Mapea el nombre de nacionalidad tal como lo devuelve la API a un código ISO
-// de 2 letras, para poder generar el emoji de bandera correspondiente.
-const NATIONALITY_CODES = {
-  Argentina: 'AR', Brazil: 'BR', Uruguay: 'UY', Chile: 'CL', Colombia: 'CO',
-  Peru: 'PE', Ecuador: 'EC', Paraguay: 'PY', Venezuela: 'VE', Bolivia: 'BO',
-  Spain: 'ES', France: 'FR', Germany: 'DE', Italy: 'IT', Portugal: 'PT',
-  Netherlands: 'NL', Belgium: 'BE', Croatia: 'HR', Serbia: 'RS', Poland: 'PL',
-  England: 'GB', Scotland: 'GB', Wales: 'GB', 'Northern Ireland': 'GB',
-  'Republic of Ireland': 'IE', Ireland: 'IE', Switzerland: 'CH', Austria: 'AT',
-  Norway: 'NO', Sweden: 'SE', Denmark: 'DK', Finland: 'FI', Iceland: 'IS',
-  Turkey: 'TR', Greece: 'GR', Russia: 'RU', Ukraine: 'UA',
-  'Czech Republic': 'CZ', Slovakia: 'SK', Hungary: 'HU', Romania: 'RO',
-  Bulgaria: 'BG', 'Bosnia and Herzegovina': 'BA', 'North Macedonia': 'MK',
-  Albania: 'AL', Montenegro: 'ME', Slovenia: 'SI', Kosovo: 'XK', Georgia: 'GE',
-  Armenia: 'AM', Israel: 'IL', Iran: 'IR', 'Saudi Arabia': 'SA', Qatar: 'QA',
-  'United Arab Emirates': 'AE', Japan: 'JP', 'South Korea': 'KR', China: 'CN',
-  Australia: 'AU', 'New Zealand': 'NZ', 'United States': 'US', Canada: 'CA',
-  Mexico: 'MX', Jamaica: 'JM', Morocco: 'MA', Algeria: 'DZ', Tunisia: 'TN',
-  Egypt: 'EG', Senegal: 'SN', 'Ivory Coast': 'CI', Ghana: 'GH', Cameroon: 'CM',
-  Nigeria: 'NG', Mali: 'ML', Guinea: 'GN', 'DR Congo': 'CD', Congo: 'CG',
-  Gabon: 'GA', Angola: 'AO', 'South Africa': 'ZA', 'Cape Verde': 'CV',
-  'Guinea-Bissau': 'GW', Gambia: 'GM', 'Equatorial Guinea': 'GQ', Comoros: 'KM',
-  Curaçao: 'CW', Suriname: 'SR',
-};
-
-function countryFlag(code) {
-  return code.toUpperCase().replace(/./g, char => String.fromCodePoint(127397 + char.charCodeAt()));
-}
-
-function nationalityFlag(nationality) {
-  const code = NATIONALITY_CODES[nationality];
-  return code ? countryFlag(code) : '';
-}
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();
@@ -198,8 +110,6 @@ export default function Home() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamMatches, setTeamMatches] = useState(null);
-  const [teamSquad, setTeamSquad] = useState(null);
-  const [expandedPlayerId, setExpandedPlayerId] = useState(null);
 
   const loadCompetition = useCallback(async (code) => {
     setLoading(true);
@@ -229,18 +139,11 @@ export default function Home() {
   async function openTeam(team) {
     setSelectedTeam(team);
     setTeamMatches(null);
-    setTeamSquad(null);
-    setExpandedPlayerId(null);
     try {
-      const [matchesData, teamData] = await Promise.all([
-        getJSON(`teams/${team.id}/matches?status=FINISHED&limit=5`),
-        getJSON(`teams/${team.id}`),
-      ]);
-      setTeamMatches(matchesData.matches || []);
-      setTeamSquad(teamData.squad || []);
+      const data = await getJSON(`teams/${team.id}/matches?status=FINISHED&limit=5`);
+      setTeamMatches(data.matches || []);
     } catch {
       setTeamMatches([]);
-      setTeamSquad([]);
     }
   }
 
@@ -250,18 +153,20 @@ export default function Home() {
     return acc;
   }, {});
 
-    return (
+  return (
     <div className="wrap">
-      <Head>
-        <title>Paso X Paso — Fútbol en vivo</title>
-        <meta name="description" content="Posiciones, partidos y estadísticas de jugadores de las principales ligas de fútbol." />
-      </Head>
       <header className="top">
         <div>
           <div className="brand-eyebrow">Datos en vivo · football-data.org</div>
-          <h1 className="brand">PASO X PASO<span className="sub">Posiciones, partidos y estadísticas de jugadores, todo en un lugar.</span></h1>
+          <h1 className="brand">MATCHDAY<span className="sub">Posiciones, partidos y estadísticas de jugadores, todo en un lugar.</span></h1>
         </div>
       </header>
+
+      {error && (
+        <div className="banner error">
+          No pudimos traer los datos: {error}. Revisá que FOOTBALL_API_KEY esté configurada en el servidor.
+        </div>
+      )}
 
       <div className="league-select">
         {COMPETITIONS.map(c => (
@@ -287,12 +192,11 @@ export default function Home() {
               <tr><th>Club</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DIF</th><th className="pts">PTS</th></tr>
             </thead>
             <tbody>
-              {standings.map((row, i) => {
-                const position = i + 1;
-                const zone = getZone(competition, position);
+              {standings.map(row => {
+                const zone = getZone(competition, row.position);
                 return (
                   <tr key={row.team.id}>
-                    <td className="pos" style={{ borderLeft: `4px solid ${zone ? zone.color : 'transparent'}` }}>{position}</td>
+                    <td className="pos" style={{ borderLeft: `4px solid ${zone ? zone.color : 'transparent'}` }}>{row.position}</td>
                     <td className="club" onClick={() => openTeam(row.team)}>
                       <Crest team={row.team} />
                       {row.team.shortName || row.team.name}
@@ -409,47 +313,6 @@ export default function Home() {
                 <div className="side right">{m.awayTeam.shortName || m.awayTeam.name}</div>
               </div>
             ))}
-
-            <div className="sub" style={{ marginTop: 20 }}>Plantel</div>
-            {teamSquad === null && <p style={{ color: 'var(--chalk-dim)' }}>Cargando…</p>}
-            {teamSquad && teamSquad.length === 0 && <p style={{ color: 'var(--chalk-dim)' }}>No hay datos de plantel disponibles.</p>}
-            {teamSquad && teamSquad.length > 0 && (
-              <div className="squad-list">
-                {POSITION_GROUPS.map(group => {
-                  const players = teamSquad
-                    .filter(p => positionRank(p.position) === group.key)
-                    .sort((a, b) => a.name.localeCompare(b.name));
-                  if (players.length === 0) return null;
-                  return (
-                    <div key={group.key}>
-                      <div className="squad-group-label">{group.label}</div>
-                      {players.map(p => {
-                        const expanded = expandedPlayerId === p.id;
-                        return (
-                          <div
-                            className="squad-player"
-                            key={p.id}
-                            onClick={() => setExpandedPlayerId(id => (id === p.id ? null : p.id))}
-                          >
-                            <span className="squad-number">{p.shirtNumber ?? '—'}</span>
-                            <div className="squad-info">
-                              <div className="squad-name">{p.name}</div>
-                              {expanded && (
-                                <div className="squad-extra">
-                                  {p.position || 'Posición no informada'}
-                                  {p.nationality ? ` · ${p.nationality}` : ''}
-                                  {p.dateOfBirth ? ` · Nac. ${new Date(p.dateOfBirth).toLocaleDateString('es-AR')}` : ''}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
         </div>
       )}

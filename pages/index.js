@@ -7,6 +7,10 @@ const COMPETITIONS = [
   { code: 'SA', name: 'Serie A' },
   { code: 'FL1', name: 'Ligue 1' },
   { code: 'CL', name: 'Champions League' },
+  { code: 'DED', name: 'Eredivisie' },
+  { code: 'PPL', name: 'Primeira Liga' },
+  { code: 'BSA', name: 'Brasileirão' },
+  { code: 'ELC', name: 'Championship' },
 ];
 
 // Zonas de clasificación aproximadas por liga (posición → color/etiqueta).

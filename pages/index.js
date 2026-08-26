@@ -217,7 +217,6 @@ export default function Home() {
           <h1 className="brand">PASO X PASO<span className="sub">Posiciones, partidos y estadísticas de jugadores, todo en un lugar.</span></h1>
         </div>
       </header>
-      )}
 
       <div className="league-select">
         {COMPETITIONS.map(c => (

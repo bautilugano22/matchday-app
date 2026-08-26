@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import Head from 'next/head';
+import AdSlot from '../components/AdSlot';
 
 const COMPETITIONS = [
   { code: 'PL', name: 'Premier League' },
@@ -288,7 +289,7 @@ export default function Home() {
           </button>
         ))}
       </div>
-
+      <AdSlot slot="1111111111" label="Banner superior" />
       {loading && <div className="banner info" style={{ marginTop: 16 }}>Cargando datos de {COMPETITIONS.find(c => c.code === competition)?.name}…</div>}
 
       {!loading && tab === 'tabla' && standings && (
@@ -464,7 +465,7 @@ export default function Home() {
           </div>
         </div>
       )}
-
+      <AdSlot slot="2222222222" label="Banner inferior" />
       <div className="halfway"><div className="line"></div><div className="label">Datos en vivo</div><div className="line"></div></div>
       <footer>Datos provistos por football-data.org · MVP público, suscripción paga próximamente</footer>
     </div>

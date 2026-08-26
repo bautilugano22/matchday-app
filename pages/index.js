@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import Head from 'next/head';
 
 const COMPETITIONS = [
   { code: 'PL', name: 'Premier League' },
@@ -204,19 +205,18 @@ export default function Home() {
     return acc;
   }, {});
 
-  return (
+    return (
     <div className="wrap">
+      <Head>
+        <title>Paso X Paso — Fútbol en vivo</title>
+        <meta name="description" content="Posiciones, partidos y estadísticas de jugadores de las principales ligas de fútbol." />
+      </Head>
       <header className="top">
         <div>
           <div className="brand-eyebrow">Datos en vivo · football-data.org</div>
-          <h1 className="brand">MATCHDAY<span className="sub">Posiciones, partidos y estadísticas de jugadores, todo en un lugar.</span></h1>
+          <h1 className="brand">PASO X PASO<span className="sub">Posiciones, partidos y estadísticas de jugadores, todo en un lugar.</span></h1>
         </div>
       </header>
-
-      {error && (
-        <div className="banner error">
-          No pudimos traer los datos: {error}. Revisá que FOOTBALL_API_KEY esté configurada en el servidor.
-        </div>
       )}
 
       <div className="league-select">

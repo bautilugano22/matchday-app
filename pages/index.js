@@ -60,7 +60,6 @@ function zoneLegend(code) {
     return true;
   });
 }
-
 function initials(name) {
   return (name || '??').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -95,6 +94,7 @@ const POSITION_ORDER = { Goalkeeper: 0, Defence: 1, 'Centre-Back': 1, 'Left-Back
 function positionRank(pos) {
   return POSITION_ORDER[pos] ?? 4;
 }
+
 const POSITION_GROUPS = [
   { key: 0, label: 'Arqueros' },
   { key: 1, label: 'Defensores' },
@@ -102,6 +102,7 @@ const POSITION_GROUPS = [
   { key: 3, label: 'Delanteros' },
   { key: 4, label: 'Otros' },
 ];
+
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();
@@ -123,6 +124,7 @@ export default function Home() {
   const [teamMatches, setTeamMatches] = useState(null);
   const [teamSquad, setTeamSquad] = useState(null);
   const [expandedPlayerId, setExpandedPlayerId] = useState(null);
+
   const loadCompetition = useCallback(async (code) => {
     setLoading(true);
     setError(null);
@@ -152,6 +154,7 @@ export default function Home() {
     setSelectedTeam(team);
     setTeamMatches(null);
     setTeamSquad(null);
+    setExpandedPlayerId(null);
     try {
       const [matchesData, teamData] = await Promise.all([
         getJSON(`teams/${team.id}/matches?status=FINISHED&limit=5`),
@@ -338,16 +341,39 @@ export default function Home() {
             {teamSquad && teamSquad.length === 0 && <p style={{ color: 'var(--chalk-dim)' }}>No hay datos de plantel disponibles.</p>}
             {teamSquad && teamSquad.length > 0 && (
               <div className="squad-list">
-                {[...teamSquad].sort((a, b) => positionRank(a.position) - positionRank(b.position)).map(p => (
-                  <div className="squad-player" key={p.id}>
-                    <span className="squad-number">{p.shirtNumber ?? '—'}</span>
-                    <div className="squad-info">
-                      <div className="squad-name">{p.name}</div>
-                      <div className="squad-pos">{p.position || 'Posición no informada'}</div>
+                {POSITION_GROUPS.map(group => {
+                  const players = teamSquad
+                    .filter(p => positionRank(p.position) === group.key)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+                  if (players.length === 0) return null;
+                  return (
+                    <div key={group.key}>
+                      <div className="squad-group-label">{group.label}</div>
+                      {players.map(p => {
+                        const expanded = expandedPlayerId === p.id;
+                        return (
+                          <div
+                            className="squad-player"
+                            key={p.id}
+                            onClick={() => setExpandedPlayerId(id => (id === p.id ? null : p.id))}
+                          >
+                            <span className="squad-number">{p.shirtNumber ?? '—'}</span>
+                            <div className="squad-info">
+                              <div className="squad-name">{p.name}</div>
+                              {expanded && (
+                                <div className="squad-extra">
+                                  {p.position || 'Posición no informada'}
+                                  {p.nationality ? ` · ${p.nationality}` : ''}
+                                  {p.dateOfBirth ? ` · Nac. ${new Date(p.dateOfBirth).toLocaleDateString('es-AR')}` : ''}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <span className="squad-nat">{p.nationality || ''}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

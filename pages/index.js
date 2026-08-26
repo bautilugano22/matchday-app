@@ -76,7 +76,6 @@ const ZONES = {
     { from: 22, to: 24, color: 'var(--whistle)', label: 'Descenso' },
   ],
 };
-};
 
 function getZone(code, position) {
   return (ZONES[code] || []).find(z => position >= z.from && position <= z.to);

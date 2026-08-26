@@ -6,7 +6,7 @@ const BASE_URL = "https://api.football-data.org/v4";
 
 // Lista blanca de competiciones que dejamos consultar, para no exponer
 // el proxy como un pasamanos abierto a cualquier endpoint.
-const ALLOWED_PREFIXES = ["competitions", "teams"];
+const ALLOWED_PREFIXES = ["competitions", "teams", "matches"];
 
 // Caché en memoria: mientras el servidor de Vercel siga "tibio" (instancia
 // reutilizada entre pedidos cercanos), reusamos la misma respuesta en vez

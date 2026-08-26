@@ -183,14 +183,14 @@ function Flag({ code, size = 16 }) {
   );
 }
 
-function MatchRow({ m }) {
+function MatchRow({ m, onClick }) {
   const live = ['LIVE', 'IN_PLAY', 'PAUSED'].includes(m.status);
   const played = m.status === 'FINISHED';
   const statusLabel = live ? (m.minute ? `${m.minute}'` : 'En vivo')
     : played ? 'Final'
     : new Date(m.utcDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   return (
-    <div className="fixture">
+    <div className="fixture" onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
       <div className="side">
         <Crest team={m.homeTeam} size={18} />
         {m.homeTeam.shortName || m.homeTeam.name}
@@ -233,6 +233,8 @@ export default function Home() {
   const [todayMatches, setTodayMatches] = useState(null);
   const [todayLoading, setTodayLoading] = useState(false);
   const [todayError, setTodayError] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [matchDetail, setMatchDetail] = useState(null);
 
   const loadCompetition = useCallback(async (code) => {
     setLoading(true);
@@ -282,6 +284,17 @@ export default function Home() {
   useEffect(() => {
     if (tab === 'hoy' && todayMatches === null && !todayLoading) loadToday();
   }, [tab, todayMatches, todayLoading, loadToday]);
+
+  async function openMatch(match) {
+    setSelectedMatch(match);
+    setMatchDetail(null);
+    try {
+      const data = await getJSON(`matches/${match.id}`);
+      setMatchDetail(data);
+    } catch {
+      setMatchDetail({ error: true });
+    }
+  }
 
   async function openTeam(team) {
     setSelectedTeam(team);
@@ -357,7 +370,7 @@ export default function Home() {
               <div className="day-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Flag code={COMPETITION_FLAGS[g.code]} size={13} /> {g.name}
               </div>
-              {g.matches.map(m => <MatchRow m={m} key={m.id} />)}
+              {g.matches.map(m => <MatchRow m={m} key={m.id} onClick={() => openMatch(m)} />)}
             </div>
           ))}
         </div>
@@ -410,7 +423,7 @@ export default function Home() {
           {Object.entries(fixturesByDay).map(([day, list]) => (
             <div key={day}>
               <div className="day-label">{day}</div>
-              {list.map(m => <MatchRow m={m} key={m.id} />)}
+              {list.map(m => <MatchRow m={m} key={m.id} onClick={() => openMatch(m)} />)}
             </div>
           ))}
         </div>
@@ -510,6 +523,51 @@ export default function Home() {
                   );
                 })}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {selectedMatch && (
+        <div className="overlay" onClick={() => setSelectedMatch(null)}>
+          <div className="sheet" onClick={e => e.stopPropagation()}>
+            <button className="sheet-close" onClick={() => setSelectedMatch(null)}>×</button>
+            <h2>{selectedMatch.homeTeam.shortName || selectedMatch.homeTeam.name} {selectedMatch.score.fullTime.home ?? 0} - {selectedMatch.score.fullTime.away ?? 0} {selectedMatch.awayTeam.shortName || selectedMatch.awayTeam.name}</h2>
+            <div className="sub">Detalle del partido</div>
+
+            {matchDetail === null && <p style={{ color: 'var(--chalk-dim)' }}>Cargando…</p>}
+            {matchDetail?.error && <p style={{ color: 'var(--chalk-dim)' }}>No pudimos traer el detalle de este partido.</p>}
+
+            {matchDetail && !matchDetail.error && (
+              <>
+                <div className="match-detail-section">⚽ Goles</div>
+                {(!matchDetail.goals || matchDetail.goals.length === 0) && (
+                  <p style={{ color: 'var(--chalk-dim)', fontSize: 13 }}>Sin datos de goleadores para este partido.</p>
+                )}
+                {matchDetail.goals && matchDetail.goals.map((g, i) => (
+                  <div className="match-event" key={i}>
+                    <span className="match-event-minute">{g.minute}'</span>
+                    <span className="match-event-desc">
+                      {g.scorer?.name || 'Jugador no informado'}
+                      {g.type === 'PENALTY' ? ' (penal)' : g.type === 'OWN' ? ' (en contra)' : ''}
+                    </span>
+                    <span className="match-event-team">{g.team?.shortName || g.team?.name}</span>
+                  </div>
+                ))}
+
+                <div className="match-detail-section" style={{ marginTop: 18 }}>🟥 Expulsados</div>
+                {(() => {
+                  const reds = (matchDetail.bookings || []).filter(b => b.card === 'RED' || b.card === 'YELLOW_RED');
+                  if (reds.length === 0) return <p style={{ color: 'var(--chalk-dim)', fontSize: 13 }}>Sin expulsados en este partido.</p>;
+                  return reds.map((b, i) => (
+                    <div className="match-event" key={i}>
+                      <span className="match-event-minute">{b.minute}'</span>
+                      <span className="match-event-desc">{b.player?.name || 'Jugador no informado'}</span>
+                      <span className="match-event-team">{b.team?.shortName || b.team?.name}</span>
+                    </div>
+                  ));
+                })()}
+              </>
             )}
           </div>
         </div>

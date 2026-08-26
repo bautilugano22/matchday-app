@@ -135,50 +135,51 @@ const POSITION_GROUPS = [
 ];
 
 const COMPETITION_FLAGS = {
-  PL: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-  PD: '🇪🇸',
-  BL1: '🇩🇪',
-  SA: '🇮🇹',
-  FL1: '🇫🇷',
-  CL: '🏆',
-  DED: '🇳🇱',
-  PPL: '🇵🇹',
-  BSA: '🇧🇷',
-  ELC: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  PL: 'gb',
+  PD: 'es',
+  BL1: 'de',
+  SA: 'it',
+  FL1: 'fr',
+  DED: 'nl',
+  PPL: 'pt',
+  BSA: 'br',
+  ELC: 'gb',
 };
 
 // Mapea el nombre de nacionalidad tal como lo devuelve la API a un código ISO
-// de 2 letras, para poder generar el emoji de bandera correspondiente.
+// de 2 letras, para poder mostrar la banderita correspondiente.
 const NATIONALITY_CODES = {
-  Argentina: 'AR', Brazil: 'BR', Uruguay: 'UY', Chile: 'CL', Colombia: 'CO',
-  Peru: 'PE', Ecuador: 'EC', Paraguay: 'PY', Venezuela: 'VE', Bolivia: 'BO',
-  Spain: 'ES', France: 'FR', Germany: 'DE', Italy: 'IT', Portugal: 'PT',
-  Netherlands: 'NL', Belgium: 'BE', Croatia: 'HR', Serbia: 'RS', Poland: 'PL',
-  England: 'GB', Scotland: 'GB', Wales: 'GB', 'Northern Ireland': 'GB',
-  'Republic of Ireland': 'IE', Ireland: 'IE', Switzerland: 'CH', Austria: 'AT',
-  Norway: 'NO', Sweden: 'SE', Denmark: 'DK', Finland: 'FI', Iceland: 'IS',
-  Turkey: 'TR', Greece: 'GR', Russia: 'RU', Ukraine: 'UA',
-  'Czech Republic': 'CZ', Slovakia: 'SK', Hungary: 'HU', Romania: 'RO',
-  Bulgaria: 'BG', 'Bosnia and Herzegovina': 'BA', 'North Macedonia': 'MK',
-  Albania: 'AL', Montenegro: 'ME', Slovenia: 'SI', Kosovo: 'XK', Georgia: 'GE',
-  Armenia: 'AM', Israel: 'IL', Iran: 'IR', 'Saudi Arabia': 'SA', Qatar: 'QA',
-  'United Arab Emirates': 'AE', Japan: 'JP', 'South Korea': 'KR', China: 'CN',
-  Australia: 'AU', 'New Zealand': 'NZ', 'United States': 'US', Canada: 'CA',
-  Mexico: 'MX', Jamaica: 'JM', Morocco: 'MA', Algeria: 'DZ', Tunisia: 'TN',
-  Egypt: 'EG', Senegal: 'SN', 'Ivory Coast': 'CI', Ghana: 'GH', Cameroon: 'CM',
-  Nigeria: 'NG', Mali: 'ML', Guinea: 'GN', 'DR Congo': 'CD', Congo: 'CG',
-  Gabon: 'GA', Angola: 'AO', 'South Africa': 'ZA', 'Cape Verde': 'CV',
-  'Guinea-Bissau': 'GW', Gambia: 'GM', 'Equatorial Guinea': 'GQ', Comoros: 'KM',
-  Curaçao: 'CW', Suriname: 'SR',
+  Argentina: 'ar', Brazil: 'br', Uruguay: 'uy', Chile: 'cl', Colombia: 'co',
+  Peru: 'pe', Ecuador: 'ec', Paraguay: 'py', Venezuela: 've', Bolivia: 'bo',
+  Spain: 'es', France: 'fr', Germany: 'de', Italy: 'it', Portugal: 'pt',
+  Netherlands: 'nl', Belgium: 'be', Croatia: 'hr', Serbia: 'rs', Poland: 'pl',
+  England: 'gb', Scotland: 'gb', Wales: 'gb', 'Northern Ireland': 'gb',
+  'Republic of Ireland': 'ie', Ireland: 'ie', Switzerland: 'ch', Austria: 'at',
+  Norway: 'no', Sweden: 'se', Denmark: 'dk', Finland: 'fi', Iceland: 'is',
+  Turkey: 'tr', Greece: 'gr', Russia: 'ru', Ukraine: 'ua',
+  'Czech Republic': 'cz', Slovakia: 'sk', Hungary: 'hu', Romania: 'ro',
+  Bulgaria: 'bg', 'Bosnia and Herzegovina': 'ba', 'North Macedonia': 'mk',
+  Albania: 'al', Montenegro: 'me', Slovenia: 'si', Kosovo: 'xk', Georgia: 'ge',
+  Armenia: 'am', Israel: 'il', Iran: 'ir', 'Saudi Arabia': 'sa', Qatar: 'qa',
+  'United Arab Emirates': 'ae', Japan: 'jp', 'South Korea': 'kr', China: 'cn',
+  Australia: 'au', 'New Zealand': 'nz', 'United States': 'us', Canada: 'ca',
+  Mexico: 'mx', Jamaica: 'jm', Morocco: 'ma', Algeria: 'dz', Tunisia: 'tn',
+  Egypt: 'eg', Senegal: 'sn', 'Ivory Coast': 'ci', Ghana: 'gh', Cameroon: 'cm',
+  Nigeria: 'ng', Mali: 'ml', Guinea: 'gn', 'DR Congo': 'cd', Congo: 'cg',
+  Gabon: 'ga', Angola: 'ao', 'South Africa': 'za', 'Cape Verde': 'cv',
+  'Guinea-Bissau': 'gw', Gambia: 'gm', 'Equatorial Guinea': 'gq', Comoros: 'km',
+  Curaçao: 'cw', Suriname: 'sr',
 };
 
-function countryFlag(code) {
-  return code.toUpperCase().replace(/./g, char => String.fromCodePoint(127397 + char.charCodeAt()));
-}
-
-function nationalityFlag(nationality) {
-  const code = NATIONALITY_CODES[nationality];
-  return code ? countryFlag(code) : '';
+function Flag({ code, size = 16 }) {
+  if (!code) return <span style={{ fontSize: size }}>⚽</span>;
+  return (
+    <img
+      src={`https://flagcdn.com/${code}.svg`}
+      alt=""
+      style={{ width: size, height: size * 0.75, objectFit: 'cover', borderRadius: 2, flex: '0 0 auto' }}
+    />
+  );
 }
 
 async function getJSON(path) {
@@ -274,7 +275,9 @@ export default function Home() {
       <div className="league-select">
         {COMPETITIONS.map(c => (
           <div key={c.code} className={`lchip ${competition === c.code ? 'active' : ''}`}
-            onClick={() => setCompetition(c.code)}>{COMPETITION_FLAGS[c.code]} {c.name}</div>
+            onClick={() => setCompetition(c.code)}>
+            {COMPETITION_FLAGS[c.code] ? <Flag code={COMPETITION_FLAGS[c.code]} size={14} /> : <span>🏆</span>} {c.name}
+          </div>
         ))}
       </div>
 
@@ -439,7 +442,7 @@ export default function Home() {
                             key={p.id}
                             onClick={() => setExpandedPlayerId(id => (id === p.id ? null : p.id))}
                           >
-                            <span className="squad-flag">{nationalityFlag(p.nationality) || '⚽'}</span>
+                            <span className="squad-flag"><Flag code={NATIONALITY_CODES[p.nationality]} size={18} /></span>
                             <div className="squad-info">
                               <div className="squad-name">{p.name}</div>
                               {expanded && (

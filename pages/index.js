@@ -183,6 +183,32 @@ function Flag({ code, size = 16 }) {
   );
 }
 
+function MatchRow({ m }) {
+  const live = ['LIVE', 'IN_PLAY', 'PAUSED'].includes(m.status);
+  const played = m.status === 'FINISHED';
+  const statusLabel = live ? (m.minute ? `${m.minute}'` : 'En vivo')
+    : played ? 'Final'
+    : new Date(m.utcDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return (
+    <div className="fixture">
+      <div className="side">
+        <Crest team={m.homeTeam} size={18} />
+        {m.homeTeam.shortName || m.homeTeam.name}
+      </div>
+      <div className="mid">
+        {played || live
+          ? <>{m.score.fullTime.home ?? 0}<span className="vs"> - </span>{m.score.fullTime.away ?? 0}</>
+          : <span className="vs">vs</span>}
+      </div>
+      <div className="side right">
+        {m.awayTeam.shortName || m.awayTeam.name}
+        <Crest team={m.awayTeam} size={18} />
+      </div>
+      <div className={`status ${live ? 'live' : ''}`}>{statusLabel}</div>
+    </div>
+  );
+}
+
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();
@@ -204,6 +230,9 @@ export default function Home() {
   const [teamMatches, setTeamMatches] = useState(null);
   const [teamSquad, setTeamSquad] = useState(null);
   const [expandedPlayerId, setExpandedPlayerId] = useState(null);
+  const [todayMatches, setTodayMatches] = useState(null);
+  const [todayLoading, setTodayLoading] = useState(false);
+  const [todayError, setTodayError] = useState(null);
 
   const loadCompetition = useCallback(async (code) => {
     setLoading(true);
@@ -229,6 +258,30 @@ export default function Home() {
   }, []);
 
   useEffect(() => { loadCompetition(competition); }, [competition, loadCompetition]);
+
+  const loadToday = useCallback(async () => {
+    setTodayLoading(true);
+    setTodayError(null);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const results = await Promise.all(
+        COMPETITIONS.map(c =>
+          getJSON(`competitions/${c.code}/matches?dateFrom=${today}&dateTo=${today}`)
+            .then(d => ({ code: c.code, name: c.name, matches: d.matches || [] }))
+            .catch(() => ({ code: c.code, name: c.name, matches: [] }))
+        )
+      );
+      setTodayMatches(results);
+    } catch (e) {
+      setTodayError(e.message);
+    } finally {
+      setTodayLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'hoy' && todayMatches === null && !todayLoading) loadToday();
+  }, [tab, todayMatches, todayLoading, loadToday]);
 
   async function openTeam(team) {
     setSelectedTeam(team);
@@ -283,14 +336,34 @@ export default function Home() {
       </div>
 
       <div className="tabs">
-        {['tabla', 'partidos', 'jugadores'].map(t => (
+        {['hoy', 'tabla', 'partidos', 'jugadores'].map(t => (
           <button key={t} className={`tab-btn ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
             {t}
           </button>
         ))}
       </div>
+
       <AdSlot slot="1111111111" label="Banner superior" />
-      {loading && <div className="banner info" style={{ marginTop: 16 }}>Cargando datos de {COMPETITIONS.find(c => c.code === competition)?.name}…</div>}
+
+      {tab === 'hoy' && (
+        <div>
+          {todayLoading && <div className="banner info" style={{ marginTop: 16 }}>Cargando partidos de todas las ligas…</div>}
+          {todayError && <div className="banner error">No pudimos traer los partidos de hoy: {todayError}</div>}
+          {todayMatches && todayMatches.every(g => g.matches.length === 0) && (
+            <p style={{ color: 'var(--chalk-dim)' }}>No hay partidos programados para hoy en ninguna de las ligas.</p>
+          )}
+          {todayMatches && todayMatches.filter(g => g.matches.length > 0).map(g => (
+            <div key={g.code}>
+              <div className="day-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Flag code={COMPETITION_FLAGS[g.code]} size={13} /> {g.name}
+              </div>
+              {g.matches.map(m => <MatchRow m={m} key={m.id} />)}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading && tab !== 'hoy' && <div className="banner info" style={{ marginTop: 16 }}>Cargando datos de {COMPETITIONS.find(c => c.code === competition)?.name}…</div>}
 
       {!loading && tab === 'tabla' && standings && (
         <>
@@ -337,31 +410,7 @@ export default function Home() {
           {Object.entries(fixturesByDay).map(([day, list]) => (
             <div key={day}>
               <div className="day-label">{day}</div>
-              {list.map(m => {
-                const live = ['LIVE', 'IN_PLAY', 'PAUSED'].includes(m.status);
-                const played = m.status === 'FINISHED';
-                const statusLabel = live ? (m.minute ? `${m.minute}'` : 'En vivo')
-                  : played ? 'Final'
-                  : new Date(m.utcDate).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-                return (
-                  <div className="fixture" key={m.id}>
-                    <div className="side">
-                      <Crest team={m.homeTeam} size={18} />
-                      {m.homeTeam.shortName || m.homeTeam.name}
-                    </div>
-                    <div className="mid">
-                      {played || live
-                        ? <>{m.score.fullTime.home ?? 0}<span className="vs"> - </span>{m.score.fullTime.away ?? 0}</>
-                        : <span className="vs">vs</span>}
-                    </div>
-                    <div className="side right">
-                      {m.awayTeam.shortName || m.awayTeam.name}
-                      <Crest team={m.awayTeam} size={18} />
-                    </div>
-                    <div className={`status ${live ? 'live' : ''}`}>{statusLabel}</div>
-                  </div>
-                );
-              })}
+              {list.map(m => <MatchRow m={m} key={m.id} />)}
             </div>
           ))}
         </div>
@@ -465,7 +514,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
       <AdSlot slot="2222222222" label="Banner inferior" />
+
       <div className="halfway"><div className="line"></div><div className="label">Datos en vivo</div><div className="line"></div></div>
       <footer>Datos provistos por football-data.org · MVP público, suscripción paga próximamente</footer>
     </div>

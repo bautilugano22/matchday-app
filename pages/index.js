@@ -95,7 +95,13 @@ const POSITION_ORDER = { Goalkeeper: 0, Defence: 1, 'Centre-Back': 1, 'Left-Back
 function positionRank(pos) {
   return POSITION_ORDER[pos] ?? 4;
 }
-
+const POSITION_GROUPS = [
+  { key: 0, label: 'Arqueros' },
+  { key: 1, label: 'Defensores' },
+  { key: 2, label: 'Mediocampistas' },
+  { key: 3, label: 'Delanteros' },
+  { key: 4, label: 'Otros' },
+];
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();
@@ -116,7 +122,7 @@ export default function Home() {
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [teamMatches, setTeamMatches] = useState(null);
   const [teamSquad, setTeamSquad] = useState(null);
-
+  const [expandedPlayerId, setExpandedPlayerId] = useState(null);
   const loadCompetition = useCallback(async (code) => {
     setLoading(true);
     setError(null);

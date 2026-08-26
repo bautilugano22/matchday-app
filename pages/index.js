@@ -133,7 +133,52 @@ const POSITION_GROUPS = [
   { key: 3, label: 'Delanteros' },
   { key: 4, label: 'Otros' },
 ];
+const COMPETITION_FLAGS = {
+  PL: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+  PD: '🇪🇸',
+  BL1: '🇩🇪',
+  SA: '🇮🇹',
+  FL1: '🇫🇷',
+  CL: '🏆',
+  DED: '🇳🇱',
+  PPL: '🇵🇹',
+  BSA: '🇧🇷',
+  ELC: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+};
 
+// Mapea el nombre de nacionalidad tal como lo devuelve la API a un código ISO
+// de 2 letras, para poder generar el emoji de bandera correspondiente.
+const NATIONALITY_CODES = {
+  Argentina: 'AR', Brazil: 'BR', Uruguay: 'UY', Chile: 'CL', Colombia: 'CO',
+  Peru: 'PE', Ecuador: 'EC', Paraguay: 'PY', Venezuela: 'VE', Bolivia: 'BO',
+  Spain: 'ES', France: 'FR', Germany: 'DE', Italy: 'IT', Portugal: 'PT',
+  Netherlands: 'NL', Belgium: 'BE', Croatia: 'HR', Serbia: 'RS', Poland: 'PL',
+  England: 'GB', Scotland: 'GB', Wales: 'GB', 'Northern Ireland': 'GB',
+  'Republic of Ireland': 'IE', Ireland: 'IE', Switzerland: 'CH', Austria: 'AT',
+  Norway: 'NO', Sweden: 'SE', Denmark: 'DK', Finland: 'FI', Iceland: 'IS',
+  Turkey: 'TR', Greece: 'GR', Russia: 'RU', Ukraine: 'UA',
+  'Czech Republic': 'CZ', Slovakia: 'SK', Hungary: 'HU', Romania: 'RO',
+  Bulgaria: 'BG', 'Bosnia and Herzegovina': 'BA', 'North Macedonia': 'MK',
+  Albania: 'AL', Montenegro: 'ME', Slovenia: 'SI', Kosovo: 'XK', Georgia: 'GE',
+  Armenia: 'AM', Israel: 'IL', Iran: 'IR', 'Saudi Arabia': 'SA', Qatar: 'QA',
+  'United Arab Emirates': 'AE', Japan: 'JP', 'South Korea': 'KR', China: 'CN',
+  Australia: 'AU', 'New Zealand': 'NZ', 'United States': 'US', Canada: 'CA',
+  Mexico: 'MX', Jamaica: 'JM', Morocco: 'MA', Algeria: 'DZ', Tunisia: 'TN',
+  Egypt: 'EG', Senegal: 'SN', 'Ivory Coast': 'CI', Ghana: 'GH', Cameroon: 'CM',
+  Nigeria: 'NG', Mali: 'ML', Guinea: 'GN', 'DR Congo': 'CD', Congo: 'CG',
+  Gabon: 'GA', Angola: 'AO', 'South Africa': 'ZA', 'Cape Verde': 'CV',
+  'Guinea-Bissau': 'GW', Gambia: 'GM', 'Equatorial Guinea': 'GQ', Comoros: 'KM',
+  Curaçao: 'CW', Suriname: 'SR',
+};
+
+function countryFlag(code) {
+  return code.toUpperCase().replace(/./g, char => String.fromCodePoint(127397 + char.charCodeAt()));
+}
+
+function nationalityFlag(nationality) {
+  const code = NATIONALITY_CODES[nationality];
+  return code ? countryFlag(code) : '';
+}
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();

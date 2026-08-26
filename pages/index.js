@@ -17,6 +17,7 @@ const COMPETITIONS = [
 // Los cupos exactos pueden variar según la temporada (ranking de coeficientes,
 // repechajes, etc.) — se muestra la distribución más habitual de cada liga.
 const ZONES = {
+const ZONES = {
   PL: [
     { from: 1, to: 4, color: 'var(--floodlight)', label: 'Champions League' },
     { from: 5, to: 5, color: 'var(--zone-europa)', label: 'Europa League' },
@@ -49,6 +50,33 @@ const ZONES = {
     { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
     { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
   ],
+  DED: [
+    { from: 1, to: 2, color: 'var(--floodlight)', label: 'Champions League' },
+    { from: 3, to: 3, color: 'var(--zone-ucl-quali)', label: 'Ronda de clasificación - Champions League' },
+    { from: 4, to: 4, color: 'var(--zone-europa)', label: 'Ronda de clasificación - Europa League' },
+    { from: 5, to: 8, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
+    { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+  PPL: [
+    { from: 1, to: 1, color: 'var(--floodlight)', label: 'Champions League' },
+    { from: 2, to: 2, color: 'var(--zone-ucl-quali)', label: 'Ronda de clasificación - Champions League' },
+    { from: 3, to: 3, color: 'var(--zone-europa)', label: 'Ronda de clasificación - Europa League' },
+    { from: 4, to: 4, color: 'var(--zone-conf)', label: 'Ronda de clasificación - Conference League' },
+    { from: 16, to: 16, color: 'var(--zone-playout)', label: 'Play Off de descenso' },
+    { from: 17, to: 18, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+  BSA: [
+    { from: 1, to: 6, color: 'var(--floodlight)', label: 'Copa Libertadores' },
+    { from: 7, to: 12, color: 'var(--zone-europa)', label: 'Copa Sudamericana' },
+    { from: 17, to: 20, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+  ELC: [
+    { from: 1, to: 2, color: 'var(--floodlight)', label: 'Ascenso directo a la Premier League' },
+    { from: 3, to: 6, color: 'var(--zone-conf)', label: 'Play Off de ascenso' },
+    { from: 22, to: 24, color: 'var(--whistle)', label: 'Descenso' },
+  ],
+};
 };
 
 function getZone(code, position) {

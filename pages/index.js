@@ -192,11 +192,12 @@ export default function Home() {
               <tr><th>Club</th><th>PJ</th><th>G</th><th>E</th><th>P</th><th>GF</th><th>GC</th><th>DIF</th><th className="pts">PTS</th></tr>
             </thead>
             <tbody>
-              {standings.map(row => {
-                const zone = getZone(competition, row.position);
+              {standings.map((row, i) => {
+                const position = i + 1;
+                const zone = getZone(competition, position);
                 return (
                   <tr key={row.team.id}>
-                    <td className="pos" style={{ borderLeft: `4px solid ${zone ? zone.color : 'transparent'}` }}>{row.position}</td>
+                    <td className="pos" style={{ borderLeft: `4px solid ${zone ? zone.color : 'transparent'}` }}>{position}</td>
                     <td className="club" onClick={() => openTeam(row.team)}>
                       <Crest team={row.team} />
                       {row.team.shortName || row.team.name}

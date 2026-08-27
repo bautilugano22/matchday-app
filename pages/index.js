@@ -481,7 +481,15 @@ export default function Home() {
           <div className="sheet" onClick={e => e.stopPropagation()}>
             <button className="sheet-close" onClick={() => setSelectedTeam(null)}>×</button>
             <h2>{selectedTeam.name}</h2>
-            <div className="sub">Últimos 5 partidos</div>
+                       <div className="sub">Últimos 5 partidos</div>
+            {teamMatches && teamMatches.length > 0 && (
+              <div className="form-row">
+                {teamMatches.map(m => {
+                  const r = matchResult(m, selectedTeam.id);
+                  return <span key={m.id} className={`form-dot form-${r || 'x'}`}>{r || '?'}</span>;
+                })}
+              </div>
+            )}
             {teamMatches === null && <p style={{ color: 'var(--chalk-dim)' }}>Cargando…</p>}
             {teamMatches && teamMatches.length === 0 && <p style={{ color: 'var(--chalk-dim)' }}>Sin datos recientes.</p>}
             {teamMatches && teamMatches.map(m => (

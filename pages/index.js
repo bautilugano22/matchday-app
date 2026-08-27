@@ -277,6 +277,25 @@ export default function Home() {
 
   useEffect(() => { loadCompetition(competition); }, [competition, loadCompetition]);
 
+  // Auto-actualización: si hay algún partido en vivo en la liga seleccionada,
+  // volvemos a pedir los partidos cada 45s (sin re-pedir tabla ni goleadores).
+  useEffect(() => {
+    if (!matches) return;
+    const hasLive = matches.some(m => ['LIVE', 'IN_PLAY', 'PAUSED'].includes(m.status));
+    if (!hasLive) return;
+    const dateFrom = new Date(Date.now() - 3 * 86400000).toISOString().slice(0, 10);
+    const dateTo = new Date(Date.now() + 4 * 86400000).toISOString().slice(0, 10);
+    const id = setInterval(async () => {
+      try {
+        const data = await getJSON(`competitions/${competition}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`);
+        setMatches(data.matches || []);
+      } catch {
+        // si falla un refresco silencioso, no rompemos la vista actual
+      }
+    }, 45000);
+    return () => clearInterval(id);
+  }, [matches, competition]);
+
   const loadToday = useCallback(async () => {
     setTodayLoading(true);
     setTodayError(null);
@@ -301,6 +320,17 @@ export default function Home() {
     if (tab === 'hoy' && todayMatches === null && !todayLoading) loadToday();
   }, [tab, todayMatches, todayLoading, loadToday]);
 
+  // Auto-actualización de "Hoy": esta pestaña ya hace 10 pedidos de golpe
+  // (uno por liga), así que usamos un intervalo más largo (60s) para no
+  // pasarnos del límite de 10 pedidos/minuto del plan gratis.
+  useEffect(() => {
+    if (!todayMatches) return;
+    const hasLive = todayMatches.some(g => g.matches.some(m => ['LIVE', 'IN_PLAY', 'PAUSED'].includes(m.status)));
+    if (!hasLive) return;
+    const id = setInterval(loadToday, 60000);
+    return () => clearInterval(id);
+  }, [todayMatches, loadToday]);
+
   async function openMatch(match) {
     setSelectedMatch(match);
     setMatchDetail(null);
@@ -311,6 +341,24 @@ export default function Home() {
       setMatchDetail({ error: true });
     }
   }
+
+  // Auto-actualización del detalle de partido mientras está en vivo
+  // (marcador, goles y expulsados se refrescan cada 45s).
+  useEffect(() => {
+    if (!selectedMatch) return;
+    const isLive = ['LIVE', 'IN_PLAY', 'PAUSED'].includes(selectedMatch.status);
+    if (!isLive) return;
+    const id = setInterval(async () => {
+      try {
+        const data = await getJSON(`matches/${selectedMatch.id}`);
+        setMatchDetail(data);
+        setSelectedMatch(prev => (prev ? { ...prev, status: data.status, score: data.score } : prev));
+      } catch {
+        // refresco silencioso, no rompemos el modal si falla
+      }
+    }, 45000);
+    return () => clearInterval(id);
+  }, [selectedMatch]);
 
   const loadH2hTeams = useCallback(async () => {
     setH2hLoading(true);

@@ -208,6 +208,7 @@ function MatchRow({ m, onClick }) {
     </div>
   );
 }
+
 function matchResult(m, teamId) {
   const isHome = m.homeTeam.id === teamId;
   const gf = isHome ? m.score.fullTime.home : m.score.fullTime.away;
@@ -217,6 +218,7 @@ function matchResult(m, teamId) {
   if (gf < ga) return 'L';
   return 'D';
 }
+
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();
@@ -243,6 +245,12 @@ export default function Home() {
   const [todayError, setTodayError] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
   const [matchDetail, setMatchDetail] = useState(null);
+  const [h2hTeams, setH2hTeams] = useState(null);
+  const [h2hLoading, setH2hLoading] = useState(false);
+  const [teamAId, setTeamAId] = useState('');
+  const [teamBId, setTeamBId] = useState('');
+  const [h2hResult, setH2hResult] = useState(null); // null | 'searching' | 'notfound' | { data }
+  const [h2hError, setH2hError] = useState(null);
 
   const loadCompetition = useCallback(async (code) => {
     setLoading(true);
@@ -304,6 +312,51 @@ export default function Home() {
     }
   }
 
+  const loadH2hTeams = useCallback(async () => {
+    setH2hLoading(true);
+    try {
+      const results = await Promise.all(
+        COMPETITIONS.map(c =>
+          getJSON(`competitions/${c.code}/teams`)
+            .then(d => (d.teams || []).map(t => ({ ...t, compCode: c.code })))
+            .catch(() => [])
+        )
+      );
+      const flat = results.flat().sort((a, b) => a.name.localeCompare(b.name));
+      setH2hTeams(flat);
+    } finally {
+      setH2hLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'comparar' && h2hTeams === null && !h2hLoading) loadH2hTeams();
+  }, [tab, h2hTeams, h2hLoading, loadH2hTeams]);
+
+  async function searchH2h() {
+    if (!teamAId || !teamBId || teamAId === teamBId) return;
+    setH2hResult('searching');
+    setH2hError(null);
+    try {
+      const dateFrom = new Date(Date.now() - 3 * 365 * 86400000).toISOString().slice(0, 10);
+      const dateTo = new Date().toISOString().slice(0, 10);
+      const data = await getJSON(`teams/${teamAId}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}&limit=200`);
+      const teamBIdNum = Number(teamBId);
+      const found = (data.matches || [])
+        .filter(m => m.homeTeam.id === teamBIdNum || m.awayTeam.id === teamBIdNum)
+        .sort((a, b) => new Date(b.utcDate) - new Date(a.utcDate))[0];
+      if (!found) {
+        setH2hResult('notfound');
+        return;
+      }
+      const h2h = await getJSON(`matches/${found.id}/head2head?limit=10`);
+      setH2hResult({ data: h2h });
+    } catch (e) {
+      setH2hError(e.message);
+      setH2hResult(null);
+    }
+  }
+
   async function openTeam(team) {
     setSelectedTeam(team);
     setTeamMatches(null);
@@ -357,7 +410,7 @@ export default function Home() {
       </div>
 
       <div className="tabs">
-        {['hoy', 'tabla', 'partidos', 'jugadores'].map(t => (
+        {['hoy', 'tabla', 'partidos', 'jugadores', 'comparar'].map(t => (
           <button key={t} className={`tab-btn ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
             {t}
           </button>
@@ -384,7 +437,59 @@ export default function Home() {
         </div>
       )}
 
-      {loading && tab !== 'hoy' && <div className="banner info" style={{ marginTop: 16 }}>Cargando datos de {COMPETITIONS.find(c => c.code === competition)?.name}…</div>}
+      {tab === 'comparar' && (
+        <div>
+          {h2hLoading && <div className="banner info" style={{ marginTop: 16 }}>Cargando lista de equipos de las 10 ligas…</div>}
+          {h2hTeams && (
+            <>
+              <div className="h2h-picker">
+                <select className="h2h-select" value={teamAId} onChange={e => { setTeamAId(e.target.value); setH2hResult(null); }}>
+                  <option value="">Elegí el equipo A…</option>
+                  {h2hTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+                <span className="h2h-vs">vs</span>
+                <select className="h2h-select" value={teamBId} onChange={e => { setTeamBId(e.target.value); setH2hResult(null); }}>
+                  <option value="">Elegí el equipo B…</option>
+                  {h2hTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              <button
+                className="btn"
+                style={{ marginTop: 12 }}
+                disabled={!teamAId || !teamBId || teamAId === teamBId}
+                onClick={searchH2h}
+              >
+                Buscar historial
+              </button>
+
+              {h2hResult === 'searching' && <div className="banner info" style={{ marginTop: 16 }}>Buscando enfrentamientos entre ambos equipos…</div>}
+              {h2hResult === 'notfound' && <div className="banner info" style={{ marginTop: 16 }}>No encontramos enfrentamientos entre estos equipos en los datos disponibles.</div>}
+              {h2hError && <div className="banner error">No pudimos completar la búsqueda: {h2hError}</div>}
+
+              {h2hResult && h2hResult.data && (() => {
+                const agg = h2hResult.data.aggregates;
+                const list = h2hResult.data.matches || [];
+                return (
+                  <div style={{ marginTop: 18 }}>
+                    {agg && (
+                      <div className="stat-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                        <div className="stat-box"><div className="n">{agg.homeTeam?.wins ?? '—'}</div><div className="l">{agg.homeTeam?.name || 'Equipo A'}</div></div>
+                        <div className="stat-box"><div className="n">{agg.numberOfMatches ?? list.length}</div><div className="l">Partidos jugados</div></div>
+                        <div className="stat-box"><div className="n">{agg.awayTeam?.wins ?? '—'}</div><div className="l">{agg.awayTeam?.name || 'Equipo B'}</div></div>
+                      </div>
+                    )}
+                    <div className="day-label" style={{ marginTop: 18 }}>Enfrentamientos anteriores</div>
+                    {list.length === 0 && <p style={{ color: 'var(--chalk-dim)' }}>Sin partidos anteriores para mostrar.</p>}
+                    {list.map(m => <MatchRow m={m} key={m.id} onClick={() => openMatch(m)} />)}
+                  </div>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
+
+      {loading && tab !== 'hoy' && tab !== 'comparar' && <div className="banner info" style={{ marginTop: 16 }}>Cargando datos de {COMPETITIONS.find(c => c.code === competition)?.name}…</div>}
 
       {!loading && tab === 'tabla' && standings && (
         <>
@@ -481,7 +586,7 @@ export default function Home() {
           <div className="sheet" onClick={e => e.stopPropagation()}>
             <button className="sheet-close" onClick={() => setSelectedTeam(null)}>×</button>
             <h2>{selectedTeam.name}</h2>
-                       <div className="sub">Últimos 5 partidos</div>
+            <div className="sub">Últimos 5 partidos</div>
             {teamMatches && teamMatches.length > 0 && (
               <div className="form-row">
                 {teamMatches.map(m => {

@@ -208,7 +208,15 @@ function MatchRow({ m, onClick }) {
     </div>
   );
 }
-
+function matchResult(m, teamId) {
+  const isHome = m.homeTeam.id === teamId;
+  const gf = isHome ? m.score.fullTime.home : m.score.fullTime.away;
+  const ga = isHome ? m.score.fullTime.away : m.score.fullTime.home;
+  if (gf == null || ga == null) return null;
+  if (gf > ga) return 'W';
+  if (gf < ga) return 'L';
+  return 'D';
+}
 async function getJSON(path) {
   const res = await fetch(`/api/football/${path}`);
   const data = await res.json();

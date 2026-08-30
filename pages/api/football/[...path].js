@@ -2,17 +2,21 @@
 // Reenvía el pedido a football-data.org agregando la clave secreta desde
 // las variables de entorno, así ningún visitante puede verla.
 
+import { Redis } from "@upstash/redis";
+
 const BASE_URL = "https://api.football-data.org/v4";
 
 // Lista blanca de competiciones que dejamos consultar, para no exponer
 // el proxy como un pasamanos abierto a cualquier endpoint.
 const ALLOWED_PREFIXES = ["competitions", "teams", "matches"];
 
-// Caché en memoria: mientras el servidor de Vercel siga "tibio" (instancia
-// reutilizada entre pedidos cercanos), reusamos la misma respuesta en vez
-// de volver a golpear football-data.org. Esto reduce mucho el consumo de
-// cuota cuando varias personas usan la app al mismo tiempo.
-const cache = new Map();
+// Caché persistente en Upstash Redis: a diferencia de guardar los datos en
+// una variable de memoria (que se pierde cada vez que Vercel "apaga" la
+// instancia del servidor), esto sobrevive entre visitas de distintas
+// personas, reduciendo mucho el consumo de cuota de la API gratuita.
+const redis = (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN)
+  ? Redis.fromEnv()
+  : null;
 
 // Tiempo que se reutiliza cada respuesta antes de pedirla de nuevo (en segundos).
 // Los partidos en vivo cambian rápido; la tabla y los goleadores casi no.
@@ -20,6 +24,8 @@ function ttlFor(segments) {
   if (segments.includes("matches")) return 45;
   return 300; // standings, scorers, teams
 }
+
+const DURABLE_TTL = 86400; // respaldo de 24hs por si la API se queda sin cuota
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -47,12 +53,18 @@ export default async function handler(req, res) {
 
   const targetUrl = `${BASE_URL}/${segments.join("/")}${qs ? `?${qs}` : ""}`;
   const ttlSeconds = ttlFor(segments);
+  const durableKey = `durable:${targetUrl}`;
 
-  const cached = cache.get(targetUrl);
-  if (cached && Date.now() - cached.timestamp < ttlSeconds * 1000) {
-    res.setHeader("Cache-Control", `s-maxage=${ttlSeconds}, stale-while-revalidate=120`);
-    res.setHeader("X-Cache", "HIT");
-    return res.status(200).json(cached.data);
+  if (redis) {
+    try {
+      const cached = await redis.get(targetUrl);
+      if (cached) {
+        res.setHeader("X-Cache", "HIT");
+        return res.status(200).json(cached);
+      }
+    } catch {
+      // si Redis falla, seguimos de largo y pedimos directo a la API
+    }
   }
 
   try {
@@ -63,27 +75,37 @@ export default async function handler(req, res) {
     const data = await upstream.json();
 
     if (!upstream.ok) {
-      // Si nos quedamos sin cuota pero todavía tenemos algo en caché (aunque
-      // esté vencido), mejor mostrar eso que un error en pantalla.
-      if (upstream.status === 429 && cached) {
-        res.setHeader("X-Cache", "STALE");
-        return res.status(200).json(cached.data);
+      // Si nos quedamos sin cuota, mostramos el último dato bueno guardado
+      // (aunque tenga hasta 24hs) en vez de un error en pantalla.
+      if (upstream.status === 429 && redis) {
+        const stale = await redis.get(durableKey).catch(() => null);
+        if (stale) {
+          res.setHeader("X-Cache", "STALE");
+          return res.status(200).json(stale);
+        }
       }
       return res.status(upstream.status).json({
         error: data?.message || "Error consultando football-data.org",
       });
     }
 
-    cache.set(targetUrl, { data, timestamp: Date.now() });
+    if (redis) {
+      await Promise.all([
+        redis.set(targetUrl, data, { ex: ttlSeconds }).catch(() => {}),
+        redis.set(durableKey, data, { ex: DURABLE_TTL }).catch(() => {}),
+      ]);
+    }
 
-    // Cache también en el borde de Vercel para pedidos de otros visitantes.
     res.setHeader("Cache-Control", `s-maxage=${ttlSeconds}, stale-while-revalidate=120`);
     res.setHeader("X-Cache", "MISS");
     return res.status(200).json(data);
   } catch (err) {
-    if (cached) {
-      res.setHeader("X-Cache", "STALE");
-      return res.status(200).json(cached.data);
+    if (redis) {
+      const stale = await redis.get(durableKey).catch(() => null);
+      if (stale) {
+        res.setHeader("X-Cache", "STALE");
+        return res.status(200).json(stale);
+      }
     }
     return res.status(502).json({ error: "No se pudo contactar a football-data.org" });
   }

@@ -1,10 +1,10 @@
 import '../styles/globals.css';
 import Head from 'next/head';
 import { Archivo_Narrow, Inter, IBM_Plex_Mono } from 'next/font/google';
-
+ 
 const archivoNarrow = Archivo_Narrow({
   subsets: ['latin'],
-  weight: ['500', '600', '700', '800'],
+  weight: 'variable',
   style: ['normal', 'italic'],
   variable: '--font-archivo',
   display: 'swap',
@@ -21,9 +21,9 @@ const plexMono = IBM_Plex_Mono({
   variable: '--font-mono',
   display: 'swap',
 });
-
+ 
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT;
-
+ 
 export default function App({ Component, pageProps }) {
   return (
     <>
@@ -42,3 +42,4 @@ export default function App({ Component, pageProps }) {
     </>
   );
 }
+ 

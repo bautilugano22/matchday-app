@@ -431,14 +431,18 @@ export default function Home() {
 
   return (
     <div className="wrap">
-      <Head>
+          <Head>
         <title>Paso X Paso — Fútbol en vivo</title>
         <meta name="description" content="Posiciones, partidos y estadísticas de jugadores de las principales ligas de fútbol." />
+        <link rel="icon" href="/icon.png" type="image/png" />
       </Head>
       <header className="top">
-        <div>
-          <div className="brand-eyebrow">Datos en vivo · football-data.org</div>
-          <h1 className="brand">PASO X PASO<span className="sub">Posiciones, partidos y estadísticas de jugadores, todo en un lugar.</span></h1>
+        <div className="brand-row">
+          <img src="/icon.png" alt="" className="brand-logo" />
+          <div>
+            <div className="brand-eyebrow">Datos en vivo · football-data.org</div>
+            <h1 className="brand">PASO X PASO<span className="sub">Posiciones, partidos y estadísticas de jugadores, todo en un lugar.</span></h1>
+          </div>
         </div>
       </header>
 

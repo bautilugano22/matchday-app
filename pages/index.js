@@ -104,6 +104,7 @@ function Crest({ team, size = 22 }) {
         src={team.crest}
         alt={team.shortName || team.name}
         className="crest-img"
+        loading="lazy"
         style={{ width: size, height: size }}
         onError={() => setBroken(true)}
       />
@@ -178,6 +179,7 @@ function Flag({ code, size = 16 }) {
     <img
       src={`https://flagcdn.com/${code}.svg`}
       alt=""
+      loading="lazy"
       style={{ width: size, height: size * 0.75, objectFit: 'cover', borderRadius: 2, flex: '0 0 auto' }}
     />
   );
@@ -431,7 +433,7 @@ export default function Home() {
 
   return (
     <div className="wrap">
-          <Head>
+      <Head>
         <title>Paso X Paso — Fútbol en vivo</title>
         <meta name="description" content="Posiciones, partidos y estadísticas de jugadores de las principales ligas de fútbol." />
         <link rel="icon" href="/icon.png" type="image/png" />
